@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Hanouneh
+    given-names: Jamil
+    email: jamil.hanouneh1997@gmail.com
+    affiliation: Friedrich-Alexander-Universität Erlangen-Nürnberg
+    orcid: "https://orcid.org/0000-0000-0000-0000"
+title: "Neurodevelopmental Outcome Predictor: Deep Multimodal Learning for Preterm Infants"
+version: 1.0.0
+date-released: 2025-10-26
+url: "https://github.com/JamilHanouneh/neurodevelopment-predictor"
+repository-code: "https://github.com/JamilHanouneh/neurodevelopment-predictor"
+keywords:
+  - deep-learning
+  - medical-imaging
+  - neurodevelopment
+  - preterm-infants
+  - multimodal-learning
+  - MRI
+  - fMRI
+  - DTI
+  - brain-connectivity
+license: MIT
+preferred-citation:
+  type: article
+  authors:
+    - family-names: He
+      given-names: Lili
+    - family-names: Li
+      given-names: Hailong
+    - family-names: Chen
+      given-names: Ming
+    - family-names: Wang
+      given-names: Jinghua
+    - family-names: Altaye
+      given-names: Mekibib
+    - family-names: Dillman
+      given-names: Jonathan R
+    - family-names: Parikh
+      given-names: Nehal A
+  title: "Deep Multimodal Learning From MRI and Clinical Data for Early Prediction of Neurodevelopmental Deficits in Very Preterm Infants"
+  journal: "Frontiers in Neuroscience"
+  volume: 15
+  year: 2021
+  doi: "10.3389/fnins.2021.753033"
