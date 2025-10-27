@@ -1,0 +1,333 @@
+# ============================================================================
+# Configuration for Multimodal Neurodevelopmental Outcome Prediction
+# Based on: He et al. (2021) - Deep Multimodal Learning from MRI and Clinical Data
+# ============================================================================
+
+project:
+  name: "Neurodevelopmental_Outcome_Predictor"
+  version: "1.0.0"
+  description: "Deep multimodal learning for predicting neurodevelopmental deficits in very preterm infants"
+  citation: "He L, et al. (2021). Front. Neurosci. 15:753033"
+
+# ============================================================================
+# DATA CONFIGURATION
+# ============================================================================
+data:
+  # Data paths
+  raw_data_dir: "data/raw"
+  processed_data_dir: "data/processed"
+  synthetic_data_dir: "data/synthetic"
+  clinical_data_dir: "data/clinical"
+  
+  # Dataset mode: 'real' or 'synthetic'
+  mode: "synthetic"  # Use 'real' when you have actual dHCP data
+  
+  # Number of synthetic subjects to generate (for testing)
+  n_synthetic_subjects: 150
+  
+  # Train/validation/test split ratios
+  train_ratio: 0.70
+  val_ratio: 0.15
+  test_ratio: 0.15
+  
+  # Random seed for reproducibility
+  random_seed: 42
+  
+  # Data specifications
+  functional_connectivity:
+    n_regions: 223  # Functional atlas regions
+    symmetric: true
+    threshold: 0.0  # Correlation threshold for connectivity
+    
+  structural_connectivity:
+    n_regions: 90   # AAL atlas regions
+    symmetric: true
+    threshold: 0.0
+    
+  dwma_features:
+    n_features: 11  # Diffuse white matter abnormality features
+    feature_names:
+      - "total_brain_volume"
+      - "white_matter_volume"
+      - "gray_matter_volume"
+      - "csf_volume"
+      - "unmyelinated_white_matter_volume"
+      - "myelinated_white_matter_volume"
+      - "cerebellum_volume"
+      - "dwma_volume"
+      - "punctate_white_matter_lesion_volume"
+      - "cystic_lesion_volume"
+      - "ventricle_volume"
+      
+  clinical_features:
+    n_features: 72  # Perinatal clinical variables
+    normalize: true
+    handle_missing: "mean"  # Options: 'mean', 'median', 'drop', 'forward_fill'
+
+# ============================================================================
+# MODEL CONFIGURATION
+# ============================================================================
+model:
+  # Model architecture
+  architecture: "multimodal_vgg19"
+  
+  # Pre-trained weights
+  pretrained_vgg19: true
+  freeze_vgg19_layers: false  # Set to true for initial training, false for fine-tuning
+  
+  # Network dimensions
+  functional_connectivity_input_size: [223, 223]
+  structural_connectivity_input_size: [90, 90]
+  dwma_input_size: 11
+  clinical_input_size: 72
+  
+  # Fusion strategy
+  fusion_method: "concatenation"  # Options: 'concatenation', 'attention', 'bilinear'
+  
+  # Hidden layer dimensions
+  fc_dims: [512, 256, 128]
+  dropout_rate: 0.5
+  
+  # Output configuration
+  outcomes:
+    - "cognitive"
+    - "language"
+    - "motor"
+  
+  # Multi-task learning
+  task_types:
+    cognitive:
+      classification_threshold: 85  # Bayley-III score threshold for high-risk
+      regression: true
+      classification: true
+    language:
+      classification_threshold: 85
+      regression: true
+      classification: true
+    motor:
+      classification_threshold: 85
+      regression: true
+      classification: true
+
+# ============================================================================
+# TRAINING CONFIGURATION
+# ============================================================================
+training:
+  # Hardware
+  device: "cpu"  # Options: 'cpu', 'cuda', 'mps'
+  num_workers: 4
+  
+  # Hyperparameters
+  batch_size: 8  # Small batch size for CPU training
+  num_epochs: 100
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  
+  # Optimizer
+  optimizer: "adam"  # Options: 'adam', 'sgd', 'adamw'
+  optimizer_params:
+    betas: [0.9, 0.999]
+    eps: 1.0e-8
+  
+  # Learning rate scheduler
+  scheduler: "reduce_on_plateau"  # Options: 'step', 'exponential', 'cosine', 'reduce_on_plateau'
+  scheduler_params:
+    mode: "min"
+    factor: 0.5
+    patience: 10
+    min_lr: 1.0e-6
+  
+  # Loss functions
+  classification_loss: "binary_cross_entropy"
+  regression_loss: "mse"
+  loss_weights:
+    classification: 0.5
+    regression: 0.5
+  
+  # Early stopping
+  early_stopping:
+    enabled: true
+    patience: 20
+    min_delta: 0.001
+    monitor: "val_loss"
+    mode: "min"
+  
+  # Gradient clipping
+  gradient_clipping:
+    enabled: true
+    max_norm: 1.0
+  
+  # Mixed precision training (CPU doesn't support, but kept for future GPU use)
+  mixed_precision: false
+
+# ============================================================================
+# DATA AUGMENTATION
+# ============================================================================
+augmentation:
+  enabled: true
+  
+  # Connectivity matrix augmentation
+  connectivity_augmentation:
+    gaussian_noise:
+      enabled: true
+      std: 0.01
+    dropout_connections:
+      enabled: true
+      dropout_rate: 0.1
+    rotation:
+      enabled: false  # Connectivity matrices are symmetric
+    
+  # Clinical data augmentation
+  clinical_augmentation:
+    gaussian_noise:
+      enabled: true
+      std: 0.05
+    feature_dropout:
+      enabled: true
+      dropout_rate: 0.05
+
+# ============================================================================
+# EVALUATION CONFIGURATION
+# ============================================================================
+evaluation:
+  # Metrics to compute
+  classification_metrics:
+    - "accuracy"
+    - "sensitivity"
+    - "specificity"
+    - "precision"
+    - "f1_score"
+    - "auc_roc"
+    - "auc_pr"
+    - "confusion_matrix"
+  
+  regression_metrics:
+    - "mae"
+    - "mse"
+    - "rmse"
+    - "r2"
+    - "pearson_correlation"
+    - "spearman_correlation"
+  
+  # Cross-validation
+  cross_validation:
+    enabled: false
+    n_folds: 5
+    stratified: true
+  
+  # Confidence intervals
+  confidence_intervals:
+    enabled: true
+    n_bootstrap: 1000
+    confidence_level: 0.95
+
+# ============================================================================
+# VISUALIZATION CONFIGURATION
+# ============================================================================
+visualization:
+  # Plot settings
+  dpi: 300
+  figure_format: "png"
+  save_figures: true
+  
+  # Connectivity matrix visualization
+  connectivity_viz:
+    colormap: "RdBu_r"
+    symmetric: true
+    annotate: false
+    
+  # GradCAM for interpretability
+  gradcam:
+    enabled: true
+    target_layers: ["features.35"]  # Last conv layer of VGG-19
+    colormap: "jet"
+  
+  # Training plots
+  training_plots:
+    - "loss_curves"
+    - "metric_curves"
+    - "learning_rate"
+    
+  # Evaluation plots
+  evaluation_plots:
+    - "roc_curves"
+    - "pr_curves"
+    - "confusion_matrices"
+    - "scatter_plots"
+    - "bland_altman"
+    - "residual_plots"
+
+# ============================================================================
+# OUTPUT CONFIGURATION
+# ============================================================================
+output:
+  # Output directories
+  checkpoint_dir: "outputs/checkpoints"
+  log_dir: "outputs/logs"
+  prediction_dir: "outputs/predictions"
+  figure_dir: "outputs/figures"
+  report_dir: "outputs/reports"
+  
+  # Checkpointing
+  save_best_only: true
+  save_frequency: 5  # Save checkpoint every N epochs
+  monitor_metric: "val_auc_roc_cognitive"
+  
+  # Logging
+  log_level: "INFO"  # Options: 'DEBUG', 'INFO', 'WARNING', 'ERROR'
+  log_to_file: true
+  log_to_console: true
+  tensorboard: false  # Set to true if you want TensorBoard logging
+  
+  # Results export
+  export_predictions: true
+  export_format: "csv"  # Options: 'csv', 'json', 'pickle'
+  
+  # Report generation
+  generate_html_report: true
+  generate_pdf_report: false  # Requires additional dependencies
+
+# ============================================================================
+# INFERENCE CONFIGURATION
+# ============================================================================
+inference:
+  # Model checkpoint to load
+  checkpoint_path: "outputs/checkpoints/best_model.pth"
+  
+  # Batch processing
+  batch_size: 16
+  
+  # Output predictions
+  output_probabilities: true
+  output_scores: true
+  output_confidence_intervals: true
+  
+  # Interpretability
+  generate_gradcam: true
+  generate_feature_importance: true
+
+# ============================================================================
+# REPRODUCIBILITY
+# ============================================================================
+reproducibility:
+  seed: 42
+  deterministic: true  # Makes training deterministic (may be slower)
+  benchmark: false  # Set to true for faster training (non-deterministic)
+
+# ============================================================================
+# DEVELOPMENT & DEBUGGING
+# ============================================================================
+debug:
+  # Fast development mode (use small subset of data)
+  fast_dev_run: false
+  fast_dev_run_batches: 2
+  
+  # Profiling
+  profile_training: false
+  
+  # Validation frequency
+  val_check_interval: 1.0  # Check validation every N epochs (can be fractional)
+  
+  # Overfitting detection
+  overfit_single_batch: false
+
